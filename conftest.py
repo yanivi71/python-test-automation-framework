@@ -1,13 +1,12 @@
 import json
 import os
 from datetime import datetime
-from os import path
 
 import pytest
-from selenium import webdriver
-from pages.web_form_page import WebFormPage
-
 import requests
+from selenium import webdriver
+
+from pages.web_form_page import WebFormPage
 
 HERE = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(HERE, "config.json")
@@ -19,23 +18,46 @@ with open(CONFIG_PATH, encoding="utf-8") as f:
 def get_data(key):
     return CONFIG[key]
 
+
+def is_headless():
+    return os.environ.get("HEADLESS", "").lower() == "true"
+
+
 @pytest.fixture(scope="class")
 def driver():
     browser = get_data("browser").lower()
 
     if browser == "chrome":
-        drv = webdriver.Chrome()
+        options = webdriver.ChromeOptions()
+        if is_headless():
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+        drv = webdriver.Chrome(options=options)
     elif browser == "firefox":
-        drv = webdriver.Firefox()
+        options = webdriver.FirefoxOptions()
+        if is_headless():
+            options.add_argument("--headless")
+        drv = webdriver.Firefox(options=options)
     else:
         raise RuntimeError(f"Invalid browser type: {browser}")
 
-    drv.maximize_window()
+    if not is_headless():
+        drv.maximize_window()
+
     drv.implicitly_wait(get_data("timeout"))
 
     yield drv
 
     drv.quit()
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    report = yield
+    setattr(item, f"report_{report.when}", report)
+    return report
+
 
 @pytest.fixture(autouse=True)
 def start_at_home(request):
@@ -57,17 +79,20 @@ def screenshot_on_failure(request):
     shots_dir = os.path.join(HERE, "screenshots")
     os.makedirs(shots_dir, exist_ok=True)
     name = f"{request.node.name}_{datetime.now():%Y%m%d_%H%M%S}.png"
-    path = os.path.join(shots_dir, name)
-    driver.save_screenshot(path)
-    print(f"\nScreenshot saved: {path}")
+    shot_path = os.path.join(shots_dir, name)
+    driver.save_screenshot(shot_path)
+    print(f"\nScreenshot saved: {shot_path}")
+
 
 @pytest.fixture
 def web_form(driver):
     return WebFormPage(driver)
 
+
 @pytest.fixture(scope="session")
 def api_url():
     return get_data("api_url")
+
 
 @pytest.fixture(scope="session")
 def api():
