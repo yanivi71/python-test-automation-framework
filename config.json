@@ -1,0 +1,8 @@
+
+
+{
+  "browser": "chrome",
+  "url": "https://www.selenium.dev/selenium/web/web-form.html",
+  "api_url": "https://jsonplaceholder.typicode.com",
+  "timeout": 10
+}
