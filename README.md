@@ -1,5 +1,7 @@
 # Python Test Automation Framework — pytest
 
+[![tests](https://github.com/yanivi71/python-test-automation-framework/actions/workflows/tests.yml/badge.svg)](https://github.com/yanivi71/python-test-automation-framework/actions/workflows/tests.yml)
+
 A test automation framework built from scratch in Python, covering **UI**, **API** and **unit-level** tests
 from a single `pytest` run.
 
